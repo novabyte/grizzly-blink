@@ -13,6 +13,25 @@ version = '1.0.0-SNAPSHOT'
 def groovyVersion = 'groovy-2.1.6'
 def isReleaseVersion = !version.endsWith('SNAPSHOT')
 
+/**
+ * Generates Java test sources from Blink protocol schema files, requires
+ * 'nodejs'.
+ */
+task generateBlinkSchema(type: Exec) {
+    description = "Generate test Java source from Blink schema files."
+
+    ext.testSrc  = fileTree("$projectDir/src/test/blink").files.join(', ')
+    ext.outputSrcDir = file("$buildDir/generated-src/test")
+    ext.package_ = "me.cmoz.grizzly.blink"
+
+    doFirst {
+        outputSrcDir.exists() || outputSrcDir.mkdirs()
+    }
+
+    workingDir "$projectDir/blinkc"
+    commandLine 'node', 'blinkc.js', '-m', 'java', ext.testSrc, '-p', ext.package_, '-o', ext.outputSrcDir
+}
+
 plugins.withType(JavaPlugin) {
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
@@ -20,9 +39,9 @@ plugins.withType(JavaPlugin) {
     tasks.withType(Compile).all {
         // enable all warnings as errors
         options.compilerArgs = [
-                '-Xlint:cast,deprecation,divzero,empty,unchecked,fallthrough,path,serial,finally,overrides,-options',
-                '-Werror',
-                '-XprintProcessorInfo'
+            '-Xlint:cast,deprecation,divzero,empty,unchecked,fallthrough,path,serial,finally,overrides,-options',
+            '-Werror',
+            '-XprintProcessorInfo'
         ]
         options.encoding = "UTF-8"
     }
@@ -40,6 +59,11 @@ configurations {
 sourceSets {
     main { compileClasspath += configurations.provided }
     test { compileClasspath += configurations.testProvided }
+}
+
+compileTestJava {
+    dependsOn generateBlinkSchema
+    source generateBlinkSchema.outputSrcDir
 }
 
 def bundledDependencies = fileTree(dir: 'deps', include: '*.jar')
@@ -114,19 +138,4 @@ idea {
 
 eclipse {
     classpath { plusConfigurations += configurations.provided }
-}
-
-task generateBlinkSchema(type: Exec) {
-    description = "Generate test Java source from Blink schema files."
-
-    def testSrc   = fileTree(dir: "$projectDir/src/test/blink", include: '**/*.blink').files.join(', ')
-    def outputDir = file("$buildDir/generated-src/java")
-    def package_  = "me.cmoz.grizzly.blink"
-
-    doFirst {
-        outputDir.mkdirs()
-    }
-
-    workingDir "$projectDir/blinkc"
-    commandLine 'node', 'blinkc.js', '-m', 'java', "$testSrc", '-p', "$package_", '-o', "$outputDir"
 }
