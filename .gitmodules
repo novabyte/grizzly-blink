@@ -1,0 +1,3 @@
+[submodule "blinkc"]
+	path = blinkc
+	url = git@github.com:pantor-engineering/blinkc.git
