@@ -1,0 +1,126 @@
+/**
+ * Grizzly NIO framework filters to process the Blink (http://blinkprotocol.org/) protocol serialized
+ * messages.
+ */
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+group   = 'me.cmoz.grizzly'
+version = '1.0.0-SNAPSHOT'
+
+def groovyVersion = 'groovy-2.1.6'
+def isReleaseVersion = !version.endsWith('SNAPSHOT')
+
+plugins.withType(JavaPlugin) {
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+
+    tasks.withType(Compile).all {
+        // enable all warnings as errors
+        options.compilerArgs = [
+                '-Xlint:cast,deprecation,divzero,empty,unchecked,fallthrough,path,serial,finally,overrides,-options',
+                '-Werror',
+                '-XprintProcessorInfo'
+        ]
+        options.encoding = "UTF-8"
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    provided
+    testProvided { extendsFrom provided }
+}
+
+sourceSets {
+    main { compileClasspath += configurations.provided }
+    test { compileClasspath += configurations.testProvided }
+}
+
+dependencies {
+    def slf4jVersion = '1.7.5'
+
+    provided group: 'org.projectlombok', name: 'lombok', version: '0.12.0'
+    compile(
+        [group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion],
+        [group: 'org.glassfish.grizzly', name: 'grizzly-framework', version: '2.3.5']
+    )
+    testCompile(
+        [group: 'junit', name: 'junit', version: '4.11'],
+        [group: 'org.mockito', name: 'mockito-core', version: '1.9.5']
+    )
+    testRuntime(
+        [group: 'org.slf4j', name: 'slf4j-simple', version: slf4jVersion]
+    )
+}
+
+test {
+    forkEvery 100
+    jvmArgs '-Xms128m', '-Xmx512m', '-XX:MaxPermSize=1024m', '-enableassertions', '-Djava.awt.headless=true'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': project.name,
+                   'Implementation-Version': project.version,
+                   'Created-By': 'Gradle ' + gradle.gradleVersion,
+                   'Build-Jdk': System.properties['java.version'],
+                   'Manifest-Version': 1.0
+    }
+}
+
+javadoc {
+    classpath += configurations.provided
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+
+        scopes.PROVIDED.plus += configurations.provided
+
+        // enrich the IDE with Groovy support
+        iml.withXml { provider ->
+            provider.node.component.first().appendNode('orderEntry',
+                    [type: 'library', name: groovyVersion, level: 'application'])
+        }
+    }
+    project.ipr {
+        // let the IDE know that this is a Git project
+        withXml { provider ->
+            provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
+            provider.node.component.find { it.@name == 'CompilerConfiguration' }.annotationProcessing[0].replaceNode {
+                annotationProcessing {
+                    profile(default: true, name: 'Default', enabled: true) {
+                        processorPath useClasspath: true
+                    }
+                }
+            }
+        }
+    }
+}
+
+eclipse {
+    classpath { plusConfigurations += configurations.provided }
+}
+
+task generateBlinkSchema(type: Exec) {
+    description = "Generate test Java source from Blink schema files."
+
+    def testSrc   = fileTree(dir: "$projectDir/src/test/blink", include: '**/*.blink').files.join(', ')
+    def outputDir = file("$buildDir/generated-src/java")
+    def package_  = "me.cmoz.grizzly.blink"
+
+    doFirst {
+        outputDir.mkdirs()
+    }
+
+    workingDir "$projectDir/blinkc"
+    commandLine 'node', 'blinkc.js', '-m', 'java', "$testSrc", '-p', "$package_", '-o', "$outputDir"
+}

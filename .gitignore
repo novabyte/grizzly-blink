@@ -1,0 +1,31 @@
+## build system files
+gradle-app.setting
+.gradle
+.cache
+build
+target
+_TMP
+tmp
+out
+bin
+
+## intellij metadata files
+classes
+.idea
+*.iml
+*.ipr
+*.iws
+
+## eclipse metadata files
+.settings
+.classpath
+.project
+
+## generic files
+*~
+*.lock
+*.DS_Store
+*.swp
+*.out
+Icon?
+Thumbs.db
