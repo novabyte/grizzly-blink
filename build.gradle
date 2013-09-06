@@ -42,11 +42,14 @@ sourceSets {
     test { compileClasspath += configurations.testProvided }
 }
 
+def bundledDependencies = fileTree(dir: 'deps', include: '*.jar')
+
 dependencies {
     def slf4jVersion = '1.7.5'
 
     provided group: 'org.projectlombok', name: 'lombok', version: '0.12.0'
     compile(
+        bundledDependencies,
         [group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion],
         [group: 'org.glassfish.grizzly', name: 'grizzly-framework', version: '2.3.5']
     )
@@ -65,6 +68,9 @@ test {
 }
 
 jar {
+    from {
+        bundledDependencies.collect { it.isDirectory() ? it : zipTree(it) }
+    }
     manifest {
         attributes 'Implementation-Title': project.name,
                    'Implementation-Version': project.version,
