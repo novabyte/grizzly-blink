@@ -1,0 +1,4 @@
+namespace HelloSpec
+
+Hello/1 ->
+  string Greeting
