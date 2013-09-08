@@ -37,8 +37,10 @@ import static org.glassfish.grizzly.TransformationResult.createErrorResult;
 @Slf4j
 public class BlinkCompactDecoder extends AbstractTransformer<Buffer, Object> {
 
+    /** The error code for a failure decoding the message header. */
+    public static final int IO_BLINK_COMPACT_DECODE_HEADER = 0;
     /** The error code for a failed blink compact parse of a message. */
-    public static final int IO_BLINK_COMPACT_PARSE_ERROR = 0;
+    public static final int IO_BLINK_COMPACT_PARSE_ERROR = 1;
     /** The name of the decoder attribute for the size of the message. */
     public static final String MESSAGE_LENGTH_ATTR =
             "grizzly-blink-message-length";
@@ -69,7 +71,33 @@ public class BlinkCompactDecoder extends AbstractTransformer<Buffer, Object> {
 
         Integer messageLength = messageLengthAttr.get(storage);
         if (messageLength == null) {
-            messageLength = input.getInt();
+            log.debug("inputRemaining={}", input.remaining());
+            input.mark();
+
+            // decode varint32 message length header
+            final int b = input.get();
+            if ((b & 0x80) == 0) {
+                messageLength = b + 1;  // retain the message header byte
+            } else if ((b & 0x40) == 0) {
+                messageLength = (input.get() << 6) | (b & 0x3f);
+                messageLength += 2;     // retain the message header byte
+            } else {
+                int w = b & 0x3f;
+                if (w > 4) {
+                    final String msg = "Message length header is larger than 'u32'.";
+                    log.warn(msg);
+                    return createErrorResult(IO_BLINK_COMPACT_DECODE_HEADER, msg);
+                }
+
+                for (int i = 0; i < w; ++i) {
+                    messageLength |= input.get(i + 1) << (i << 3);
+                }
+                messageLength += w + 1; // retain the message header byte
+            }
+            log.debug("inputRemaining={}", input.remaining());
+            input.reset();
+            log.debug("inputRemaining={}", input.remaining());
+
             log.debug("messageLength={}", messageLength);
             messageLengthAttr.set(storage, messageLength);
         }
@@ -82,6 +110,7 @@ public class BlinkCompactDecoder extends AbstractTransformer<Buffer, Object> {
         try {
             final byte[] buf = input.array();
             final int pos = input.position();
+            log.debug("pos={}", pos);
 
             final DefaultBlock block = new DefaultBlock();
             final CompactReader reader = new CompactReader(objectModel);
