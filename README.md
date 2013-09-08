@@ -65,7 +65,12 @@ For a full list of dependencies see the [build script](https://github.com/novaby
 
 The codebase requires [NodeJS](http://nodejs.org/) to use the __blinkc__
  compiler, it generates source files that map the protocol specification to Java
- (similarly to how Protobuf-Java works).
+ (similarly to how Protobuf-Java works). You'll also need to clone the repository
+ with all git submodules to include the `blinkc.js` dependency:
+
+```
+git clone --recursive git://github.com/novabyte/grizzly-blink.git
+```
 
 A list of all possible build targets can be displayed by Gradle with
  `gradle tasks`.
