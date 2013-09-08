@@ -11,7 +11,19 @@ Code licensed under the [Apache License v2.0](http://www.apache.org/licenses/LIC
 
 ## Usage ##
 
-Grizzly-Blink is not __yet__ available on [Maven Central](http://search.maven.org/).
+Grizzly-Blink is available on [Maven Central](http://search.maven.org/).
+
+```xml
+<dependency>
+    <groupId>me.cmoz.grizzly</groupId>
+    <artifactId>grizzly-blink</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+If you're not using Maven (or a dependency resolver that's compatible with Maven
+ repositories), you can download the JARs you need for your project from
+ Maven Central.
 
 ### Filter Types ###
 
