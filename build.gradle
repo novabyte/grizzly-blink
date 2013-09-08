@@ -1,6 +1,6 @@
 /**
- * Grizzly NIO framework filters to process the Blink (http://blinkprotocol.org/) protocol serialized
- * messages.
+ * Grizzly NIO framework filters to process the Blink (http://blinkprotocol.org/)
+ * protocol serialized messages.
  */
 
 apply plugin: 'java'
@@ -15,7 +15,7 @@ def isReleaseVersion = !version.endsWith('SNAPSHOT')
 
 /**
  * Generates Java test sources from Blink protocol schema files, requires
- * 'nodejs'.
+ * NodeJS.
  */
 task generateBlinkSchema(type: Exec) {
     description = "Generate test Java source from Blink schema files."
@@ -122,9 +122,10 @@ idea {
         }
     }
     project.ipr {
-        // let the IDE know that this is a Git project
         withXml { provider ->
+            // let the IDE know that this is a Git project
             provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
+            // enable the annotation processor on this project
             provider.node.component.find { it.@name == 'CompilerConfiguration' }.annotationProcessing[0].replaceNode {
                 annotationProcessing {
                     profile(default: true, name: 'Default', enabled: true) {
