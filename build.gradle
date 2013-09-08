@@ -10,7 +10,7 @@ apply plugin: 'idea'
 apply plugin: 'eclipse'
 
 group   = 'me.cmoz.grizzly'
-version = '1.0.0-SNAPSHOT'
+version = '1.0.1-SNAPSHOT'
 
 def groovyVersion = 'groovy-2.1.6'
 def isReleaseVersion = !version.endsWith('SNAPSHOT')
